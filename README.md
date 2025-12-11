@@ -54,3 +54,13 @@ curl -X POST \
   -F "file=@/Users/michaelyau/Desktop/gnome.png" \
   http://localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/photos
 ```
+
+
+
+curl -X POST localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/invoice \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 120.00}'
+
+curl -X PUT localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/status \
+  -H "Content-Type: application/json" \
+  -d '{"status": "completed"}'

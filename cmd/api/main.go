@@ -30,6 +30,12 @@ func main() {
 
 	r.Post("/jobs/{id}/notes", jobs.CreateNoteHandler(db))
 
+	r.Post("/jobs/{id}/invoice", jobs.CreateInvoiceHandler(db))
+
+	r.Put("/jobs/{id}/status", jobs.UpdateJobStatusHandler(db))
+
+	
+
 	// Serve static uploaded files (for local dev)
 	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 

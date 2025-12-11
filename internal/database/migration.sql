@@ -40,3 +40,4 @@ CREATE TABLE invoices (
     stripe_session TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
