@@ -4,33 +4,34 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	// "time"
+	"pistachio/internal/models"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
-const logoPath_v3 = "assets/gnome.png"
+const logoPath = "assets/gnome.png"
 
-type InvoiceData_v3 struct {
-	InvoiceID       string
-	CustomerName    string
-	CustomerEmail   string
-	CustomerAddress string
+// type InvoiceData struct {
+// 	InvoiceID       string
+// 	CustomerName    string
+// 	CustomerEmail   string
+// 	CustomerAddress string
 
-	Items []InvoiceItem_v3
+// 	Items []InvoiceItem
 
-	TotalAmount float64
-	CreatedAt   time.Time
-}
+// 	TotalAmount float64
+// 	CreatedAt   time.Time
+// }
 
-type InvoiceItem_v3 struct {
-	Description string
-	Quantity    int
-	UnitPrice   float64
-	LineTotal   float64
-}
+// type InvoiceItem struct {
+// 	Description string
+// 	Quantity    int
+// 	UnitPrice   float64
+// 	LineTotal   float64
+// }
 
-func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error) {
+func GenerateInvoicePDF(data models.InvoiceData, outputDir string) (string, error) {
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(20, 20, 20)
@@ -45,8 +46,8 @@ func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error
 	// ================================================
 	// HEADER: LOGO + COMPANY INFO + INVOICE META
 	// ================================================
-	if _, err := os.Stat(logoPath_v3); err == nil {
-		pdf.Image(logoPath_v3, 20, 20, 30, 0, false, "", 0, "")
+	if _, err := os.Stat(logoPath); err == nil {
+		pdf.Image(logoPath, 20, 20, 30, 0, false, "", 0, "")
 	}
 
 	// Company Info (next to logo)
@@ -76,7 +77,7 @@ func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error
 	pdf.Cell(0, 6, fmt.Sprintf("Invoice ID: %s", data.InvoiceID))
 	pdf.Ln(6)
 
-	pdf.Cell(0, 6, fmt.Sprintf("Date: %s", data.CreatedAt.Format("02 Jan 2006")))
+	pdf.Cell(0, 6, fmt.Sprintf("Date: %s", data.IssueDate.Format("02 Jan 2006")))
 
 	// Spacing before main content
 	pdf.Ln(5)
@@ -97,16 +98,16 @@ func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error
 	pdf.Ln(10)
 
 	pdf.SetFont("Roboto", "", 12)
-	pdf.Cell(0, 6, data.CustomerName)
+	pdf.Cell(0, 6, data.Customer.Name)
 	pdf.Ln(6)
 
-	if data.CustomerAddress != "" {
-		pdf.MultiCell(0, 6, data.CustomerAddress, "", "", false)
+	if data.Customer.Address != "" {
+		pdf.MultiCell(0, 6, data.Customer.Address, "", "", false)
 		pdf.Ln(2)
 	}
 
-	if data.CustomerEmail != "" {
-		pdf.Cell(0, 6, data.CustomerEmail)
+	if data.Customer.Email != "" {
+		pdf.Cell(0, 6, data.Customer.Email)
 		pdf.Ln(10)
 	}
 
@@ -155,51 +156,13 @@ func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error
 		pdf.Ln(8)
 	}
 
-	// // ================================================
-	// // ITEMS TABLE
-	// // ================================================
-	// pdf.SetFont("Roboto", "B", 12)
-
-	// // Header background
-	// pdf.SetFillColor(230, 230, 230)
-	// pdf.CellFormat(90, 8, "Description", "1", 0, "", true, 0, "")
-	// pdf.CellFormat(20, 8, "Qty", "1", 0, "C", true, 0, "")
-	// pdf.CellFormat(40, 8, "Unit Price", "1", 0, "R", true, 0, "")
-	// pdf.CellFormat(40, 8, "Total", "1", 0, "R", true, 0, "")
-	// pdf.Ln(8)
-
-	// // Rows
-	// pdf.SetFont("Roboto", "", 12)
-	// for _, item := range data.Items {
-	// 	if pdf.GetY() > 260 { // A4 is ~297mm high, margins = 20 top/bottom
-	// 		pdf.AddPage()
-
-	// 		// --- Redraw table header on new page ---
-	// 		pdf.SetFont("Roboto", "B", 12)
-	// 		pdf.SetFillColor(230, 230, 230)
-	// 		pdf.CellFormat(90, 8, "Description", "1", 0, "", true, 0, "")
-	// 		pdf.CellFormat(20, 8, "Qty", "1", 0, "C", true, 0, "")
-	// 		pdf.CellFormat(40, 8, "Unit Price", "1", 0, "R", true, 0, "")
-	// 		pdf.CellFormat(40, 8, "Total", "1", 0, "R", true, 0, "")
-	// 		pdf.Ln(8)
-
-	// 		pdf.SetFont("Roboto", "", 12)
-	// 	}
-	// 	// --- Write row ---
-	// 	pdf.CellFormat(90, 8, item.Description, "1", 0, "", false, 0, "")
-	// 	pdf.CellFormat(20, 8, fmt.Sprintf("%d", item.Quantity), "1", 0, "C", false, 0, "")
-	// 	pdf.CellFormat(40, 8, fmt.Sprintf("£%.2f", item.UnitPrice), "1", 0, "R", false, 0, "")
-	// 	pdf.CellFormat(40, 8, fmt.Sprintf("£%.2f", item.LineTotal), "1", 0, "R", false, 0, "")
-	// 	pdf.Ln(8)
-	// }
-
 	// ================================================
 	// TOTALS SECTION
 	// ================================================
 	pdf.Ln(8)
 	pdf.SetFont("Roboto", "", 12)
 
-	subtotal := data.TotalAmount // no tax yet
+	subtotal := data.Totals.TotalAmount // no tax yet
 
 	rightCol := 50.0  // width of value column
 	labelCol := 120.0 // width of label column (120 + 50 = 170)
@@ -214,7 +177,7 @@ func GenerateInvoicePDF_v3(data InvoiceData_v3, outputDir string) (string, error
 
 	pdf.SetFont("Roboto", "B", 14)
 	pdf.CellFormat(labelCol, 10, "Amount Due:", "", 0, "R", false, 0, "")
-	pdf.CellFormat(rightCol, 10, fmt.Sprintf("£%.2f", data.TotalAmount), "", 0, "R", false, 0, "")
+	pdf.CellFormat(rightCol, 10, fmt.Sprintf("£%.2f", data.Totals.TotalAmount), "", 0, "R", false, 0, "")
 	pdf.Ln(16)
 
 	// ================================================

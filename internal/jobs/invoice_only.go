@@ -1,25 +1,26 @@
 package jobs
 
 import (
-    "context"
-    "encoding/json"
-    "net/http"
-    "path/filepath"
-    "time"
-
+	"context"
+	"encoding/json"
+	"net/http"
+	"path/filepath"
+	"time"
+    "fmt"
 	"pistachio/internal/invoices"
-    "github.com/google/uuid"
-    "github.com/jackc/pgx/v5/pgxpool"
+	"pistachio/internal/models"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Request format matching the new invoice-only UI
 type CreateInvoiceRequest struct {
-    CustomerName    string        `json:"customer_name"`
-    CustomerEmail   string        `json:"customer_email"`
-    CustomerAddress string        `json:"customer_address"`
-    Items           []invoices.InvoiceItem_v3 `json:"items"`
+	CustomerName    string               `json:"customer_name"`
+	CustomerEmail   string               `json:"customer_email"`
+	CustomerAddress string               `json:"customer_address"`
+	Items           []models.InvoiceItem `json:"items"`
 }
-
 func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
 
@@ -41,32 +42,81 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
             return
         }
 
-        // Calculate totals
-        total := 0.0
+        // --- Calculate totals ---
+        subtotal := 0.0
         for i := range req.Items {
             item := &req.Items[i]
             item.LineTotal = float64(item.Quantity) * item.UnitPrice
-            total += item.LineTotal
+            subtotal += item.LineTotal
         }
+
+        taxRate := 0.0      // no tax for now
+        taxAmount := 0.0
+        total := subtotal + taxAmount
 
         invoiceID := uuid.New()
         now := time.Now()
+        dueDate := now.Add(14 * 24 * time.Hour) // default: 14 days
+
+        // --- Build full invoice model ---
+        invoiceData := models.InvoiceData{
+            InvoiceID:     invoiceID.String(),
+            InvoiceNumber: fmt.Sprintf("INV-%s", invoiceID.String()[0:8]),
+            IssueDate:     now,
+            DueDate:       dueDate,
+
+            Business: models.BusinessInfo{
+                Name:      "Pistachio Ltd",
+                Address:   "123 Example Street\nLondon, UK",
+                Email:     "support@pistachio.com",
+                Phone:     "+44 0000 000000",
+                Website:   "https://pistachio.example",
+                VATNumber: "",
+                LogoPath:  "assets/gnome.png",
+            },
+
+            Customer: models.CustomerInfo{
+                Name:    req.CustomerName,
+                Email:   req.CustomerEmail,
+                Address: req.CustomerAddress,
+            },
+
+            Items: req.Items,
+
+            Totals: models.InvoiceTotals{
+                Subtotal:    subtotal,
+                TaxRate:     taxRate,
+                TaxAmount:   taxAmount,
+                TotalAmount: total,
+            },
+
+            Payment: models.PaymentInfo{
+                BankName:      "Barclays",
+                AccountName:   "Pistachio Ltd",
+                SortCode:      "00-00-00",
+                AccountNumber: "00000000",
+                Notes:         "Payment due in 14 days.",
+            },
+
+            FooterNotes: "Thank you for your business!",
+        }
+
+        // STEP 1 — Insert into DB (JSON items)
         ctx := context.Background()
 
-        // Convert items to JSON for DB
         itemsJSON, err := json.Marshal(req.Items)
         if err != nil {
-            http.Error(w, "failed to encode items", http.StatusInternalServerError)
+            http.Error(w, "cannot encode items json", 500)
             return
         }
 
-        // STEP 1 — Insert invoice with placeholder PDF URL
         placeholderPDF := "pending"
 
-        _, err = db.Exec(ctx,
-            `INSERT INTO invoices 
+        _, err = db.Exec(ctx, `
+            INSERT INTO invoices 
             (id, customer_name, customer_email, customer_address, items, total, pdf_url, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        `,
             invoiceID,
             req.CustomerName,
             req.CustomerEmail,
@@ -78,46 +128,34 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
         )
 
         if err != nil {
-            http.Error(w, "failed to insert invoice: "+err.Error(), http.StatusInternalServerError)
+            http.Error(w, "failed to insert invoice: "+err.Error(), 500)
             return
         }
 
-        // STEP 2 — Generate PDF using your v3 generator
-        pdfPath, err := invoices.GenerateInvoicePDF_v3(invoices.InvoiceData_v3{
-            InvoiceID:       invoiceID.String(),
-            CustomerName:    req.CustomerName,
-            CustomerEmail:   req.CustomerEmail,
-            CustomerAddress: req.CustomerAddress,
-            Items:           req.Items,
-            TotalAmount:     total,
-            CreatedAt:       now,
-        }, "uploads/invoices")
-
+        // STEP 2 — Generate PDF
+        pdfPath, err := invoices.GenerateInvoicePDF(invoiceData, "uploads/invoices")
         if err != nil {
-            http.Error(w, "failed to generate PDF: "+err.Error(), http.StatusInternalServerError)
+            http.Error(w, "failed to generate PDF: "+err.Error(), 500)
             return
         }
 
         pdfURL := "/uploads/invoices/" + filepath.Base(pdfPath)
 
-        // STEP 3 — Update PDF URL in DB
-        _, err = db.Exec(ctx,
-            `UPDATE invoices SET pdf_url=$1 WHERE id=$2`,
-            pdfURL, invoiceID,
-        )
-
+        // STEP 3 — Update DB with final PDF URL
+        _, err = db.Exec(ctx, `UPDATE invoices SET pdf_url=$1 WHERE id=$2`, pdfURL, invoiceID)
         if err != nil {
-            http.Error(w, "failed to store PDF URL", http.StatusInternalServerError)
+            http.Error(w, "failed to update pdf url: "+err.Error(), 500)
             return
         }
 
-        // STEP 4 — Respond with invoice info
+        // STEP 4 — Respond
         json.NewEncoder(w).Encode(map[string]any{
-            "invoice_id": invoiceID,
-            "customer_name": req.CustomerName,
-            "total": total,
-            "pdf_url": pdfURL,
-            "created_at": now.Format(time.RFC3339),
+            "invoice_id":    invoiceID.String(),
+            "invoice_number": invoiceData.InvoiceNumber,
+            "total":         invoiceData.Totals.TotalAmount,
+            "pdf_url":       pdfURL,
+            "issue_date":    now,
+            "due_date":      dueDate,
         })
     }
 }

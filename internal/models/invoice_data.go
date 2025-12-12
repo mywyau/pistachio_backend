@@ -2,78 +2,67 @@ package models
 
 import "time"
 
-//
-// ─── BUSINESS (SUPPLIER) DETAILS ─────────────────────────────────────────────
-//
+// Business (Supplier)
 type BusinessInfo struct {
-    Name        string  // e.g. "John Smith Plumbing"
-    Address     string  // multiline allowed in PDF
+    Name        string
+    Address     string
     Email       string
     Phone       string
-    Website     string  // optional
-    VATNumber   string  // optional
-    CompanyReg  string  // optional (for Ltd companies)
-    LogoPath    string  // optional custom logo
+    Website     string
+    VATNumber   string
+    CompanyReg  string
+    LogoPath    string
 }
 
-//
-// ─── CUSTOMER DETAILS ───────────────────────────────────────────────────────
-//
+// Customer
 type CustomerInfo struct {
-    Name    string
-    Email   string
-    Address string
+    Name        string
+    Email       string
+    Address     string
 }
 
-//
-// ─── INVOICE ITEM ───────────────────────────────────────────────────────────
-//
-type InvoiceItem_v3 struct {
-    Description string   // e.g. "Fix leaking tap"
-    Quantity    float64  // allow decimals for hours worked
+// Item
+type InvoiceItem struct {
+    Description string
+    Quantity    float64
     UnitPrice   float64
-    LineTotal   float64  // precomputed or computed in PDF generator
+    LineTotal   float64
 }
 
-//
-// ─── TOTALS ─────────────────────────────────────────────────────────────────
-//
+// Totals
 type InvoiceTotals struct {
-    Subtotal float64
-    TaxRate  float64 // % e.g. 20.0 for VAT
-    TaxAmount float64
+    Subtotal    float64
+    TaxRate     float64
+    TaxAmount   float64
     TotalAmount float64
 }
 
-//
-// ─── PAYMENT DETAILS ─────────────────────────────────────────────────────────
-//
+// Payment
 type PaymentInfo struct {
-    BankName     string
-    AccountName  string
-    SortCode     string
+    BankName      string
+    AccountName   string
+    SortCode      string
     AccountNumber string
-    IBAN         string // optional
-    BIC          string // optional
-    PaymentLink  string // Stripe or bank link
-    Notes        string // e.g. "Payment due within 14 days"
+    IBAN          string
+    BIC           string
+    PaymentLink   string
+    Notes         string
 }
 
-//
-// ─── MAIN INVOICE STRUCT ─────────────────────────────────────────────────────
-//
-type InvoiceData_v3 struct {
-    InvoiceID      string      // internal UUID
-    InvoiceNumber  string      // visible number (e.g. "INV-0041")
-    IssueDate      time.Time
-    DueDate        time.Time
+// Full Invoice Structure
+type InvoiceData struct {
+    InvoiceID     string        // internal UUID
+    InvoiceNumber string        // visible invoice number e.g. INV-0041
 
-    Business       BusinessInfo
-    Customer       CustomerInfo
+    IssueDate     time.Time
+    DueDate       time.Time
 
-    Items          []InvoiceItem_v3
-    Totals         InvoiceTotals
-    Payment        PaymentInfo
+    Business      BusinessInfo
+    Customer      CustomerInfo
 
-    FooterNotes    string      // e.g. warranty notes, disclaimers
+    Items         []InvoiceItem
+    Totals        InvoiceTotals
+    Payment       PaymentInfo
+
+    FooterNotes   string        // optional footer or custom text
 }
