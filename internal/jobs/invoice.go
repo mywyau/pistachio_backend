@@ -77,7 +77,7 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 				Phone:     "+44 0000 000000",
 				Website:   "https://pistachio.example",
 				VATNumber: "",
-				LogoPath:  "assets/gnome.png",
+				LogoPath:  "assets/invoice.png",
 			},
 
 			Customer: models.CustomerInfo{
