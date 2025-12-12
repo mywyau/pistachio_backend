@@ -85,10 +85,6 @@ type PhotoResponse struct {
     CreatedAt string    `json:"created_at"`
 }
 
-// type CreateInvoiceRequest struct {
-//     Amount float64 `json:"amount"`
-// }
-
 type InvoiceResponse struct {
     InvoiceID uuid.UUID `json:"invoice_id"`
     JobID     uuid.UUID `json:"job_id"`
