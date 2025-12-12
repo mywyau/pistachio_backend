@@ -35,14 +35,25 @@ CREATE TABLE job_photos (
 
 CREATE TABLE invoices (
     id UUID PRIMARY KEY,
-    job_id UUID NOT NULL REFERENCES jobs(id),
-    amount NUMERIC NOT NULL,
-    pdf_url TEXT NOT NULL,
-    stripe_session TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    customer_name TEXT NOT NULL,
+    customer_email TEXT,
+    customer_address TEXT,
+    total_amount NUMERIC NOT NULL,
+    pdf_url TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE invoice_items (
+    id UUID PRIMARY KEY,
+    invoice_id UUID REFERENCES invoices(id) ON DELETE CASCADE,
+    description TEXT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price NUMERIC NOT NULL,
+    line_total NUMERIC NOT NULL
 );
 
 -- +goose Down
+DROP TABLE invoice_items;
 DROP TABLE invoices;
 DROP TABLE job_photos;
 DROP TABLE job_notes;
