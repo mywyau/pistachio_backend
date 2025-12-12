@@ -13,6 +13,39 @@ import (
 
 const logoPath = "assets/gnome.png"
 
+
+func drawAddress(pdf *gofpdf.Fpdf, addr models.CustomerAddress, lineHeight float64) {
+	lines := []string{
+		addr.Line1,
+		addr.Line2,
+		addr.City,
+		addr.Postcode,
+		addr.Country,
+	}
+
+	for _, line := range lines {
+		if line != "" {
+			pdf.MultiCell(0, lineHeight, line, "", "", false)
+		}
+	}
+}
+
+func drawAddressBusiness(pdf *gofpdf.Fpdf, addr models.BusinessAddress, lineHeight float64) {
+	lines := []string{
+		addr.Line1,
+		addr.Line2,
+		addr.City,
+		addr.Postcode,
+		addr.Country,
+	}
+
+	for _, line := range lines {
+		if line != "" {
+			pdf.MultiCell(0, lineHeight, line, "", "", false)
+		}
+	}
+}
+
 func drawItemsTableHeader(pdf *gofpdf.Fpdf, colDesc, colQty, colUnit, colTotal float64) {
 	pdf.SetFont("Roboto", "B", 12)
 	pdf.SetFillColor(230, 230, 230)
@@ -99,9 +132,9 @@ func GenerateInvoicePDF(data models.InvoiceData, outputDir string) (string, erro
 	leftColWidth := 90.0
 
 	// Business Address
-	if data.Business.Address != "" {
-		pdf.SetX(leftColX)
-		pdf.MultiCell(leftColWidth, 6, data.Business.Address, "", "", false)
+	if data.Business.BusinessAddress.Line1 != "" {
+		drawAddressBusiness(pdf, data.Business.BusinessAddress, 6)
+		pdf.Ln(2)
 	}
 
 	// Business Email
@@ -181,8 +214,8 @@ func GenerateInvoicePDF(data models.InvoiceData, outputDir string) (string, erro
 	pdf.Cell(0, 6, data.Customer.Name)
 	pdf.Ln(6)
 
-	if data.Customer.Address != "" {
-		pdf.MultiCell(0, 6, data.Customer.Address, "", "", false)
+	if data.Customer.CustomerAddress.Line1 != "" {
+		drawAddress(pdf, data.Customer.CustomerAddress, 6)
 		pdf.Ln(2)
 	}
 

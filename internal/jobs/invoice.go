@@ -16,10 +16,10 @@ import (
 
 // Request format matching the new invoice-only UI
 type CreateInvoiceRequest struct {
-	CustomerName    string               `json:"customer_name"`
-	CustomerEmail   string               `json:"customer_email"`
-	CustomerAddress string               `json:"customer_address"`
-	Items           []models.InvoiceItem `json:"items"`
+	CustomerName    string                 `json:"customer_name"`
+	CustomerEmail   string                 `json:"customer_email"`
+	CustomerAddress models.CustomerAddress `json:"customer_address"`
+	Items           []models.InvoiceItem   `json:"items"`
 }
 
 func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
@@ -67,8 +67,12 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 			DueDate:       dueDate,
 
 			Business: models.BusinessInfo{
-				Name:      "Pistachio Ltd",
-				Address:   "123 Example Street\nLondon, UK",
+				Name: "Pistachio Ltd",
+				BusinessAddress: models.BusinessAddress{
+					Line1:   "123 Example Street",
+					City:    "London",
+					Country: "UK",
+				},
 				Email:     "support@pistachio.com",
 				Phone:     "+44 0000 000000",
 				Website:   "https://pistachio.example",
@@ -77,9 +81,9 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 			},
 
 			Customer: models.CustomerInfo{
-				Name:    req.CustomerName,
-				Email:   req.CustomerEmail,
-				Address: req.CustomerAddress,
+				Name:            req.CustomerName,
+				Email:           req.CustomerEmail,
+				CustomerAddress: req.CustomerAddress,
 			},
 
 			Items: req.Items,
@@ -99,7 +103,7 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 				Notes:         "Payment due in 30 days.",
 			},
 
-			FooterNotes: "some placeholder footer note",
+			FooterNotes: "Please contact us if you have any questions regarding this invoice.",
 		}
 
 		// STEP 1 — Insert into DB (JSON items)
@@ -113,6 +117,12 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 
 		placeholderPDF := "pending"
 
+		addressJSON, err := json.Marshal(req.CustomerAddress)
+		if err != nil {
+			http.Error(w, "cannot encode address json", http.StatusInternalServerError)
+			return
+		}
+
 		_, err = db.Exec(ctx, `
             INSERT INTO invoices 
             (id, customer_name, customer_email, customer_address, items, total, pdf_url, created_at)
@@ -121,7 +131,7 @@ func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
 			invoiceID,
 			req.CustomerName,
 			req.CustomerEmail,
-			req.CustomerAddress,
+			addressJSON,
 			itemsJSON,
 			total,
 			placeholderPDF,
