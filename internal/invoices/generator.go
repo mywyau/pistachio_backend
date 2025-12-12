@@ -20,7 +20,10 @@ type InvoiceData struct {
 func GenerateInvoicePDF(data InvoiceData, outputDir string) (string, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
-	pdf.SetFont("Arial", "B", 20)
+
+	pdf.AddUTF8Font("Roboto", "", "assets/fonts/Roboto-Regular.ttf")
+	pdf.SetFont("Roboto", "", 12)
+	// pdf.SetFont("Arial", "B", 20)
 	pdf.AddPage()
 
 	// Invoice Header

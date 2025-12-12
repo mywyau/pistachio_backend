@@ -57,9 +57,36 @@ curl -X POST \
 
 
 
-curl -X POST localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/invoice \
+<!-- curl -X POST localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/invoice \
   -H "Content-Type: application/json" \
-  -d '{"amount": 120.00}'
+  -d '{"amount": 120.00}' -->
+
+curl -X POST http://localhost:8080/invoices \
+  -H "Content-Type: application/json" \
+  -d '{
+        "job_id": "YOUR-JOB-ID-HERE",
+        "customer_name": "John Smith",
+        "customer_email": "john@example.com",
+        "customer_address": "14 High Street\nLondon\nSW1 2AB",
+
+        "items": [
+          {
+            "description": "Fix leaking tap",
+            "quantity": 1,
+            "unit_price": 80.00,
+            "line_total": 80.00
+          },
+          {
+            "description": "Callout Fee",
+            "quantity": 1,
+            "unit_price": 40.00,
+            "line_total": 40.00
+          }
+        ],
+
+        "total_amount": 120.00
+      }'
+
 
 
 curl -X PUT localhost:8080/jobs/b0d92fb3-fa63-4663-b790-1146b3948e7f/status \
