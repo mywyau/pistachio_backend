@@ -4,20 +4,20 @@ import "time"
 
 // Business (Supplier)
 type BusinessInfo struct {
-	Name       string
-	BusinessAddress     BusinessAddress
-	Email      string
-	Phone      string
-	Website    string
-	VATNumber  string
-	CompanyReg string
-	LogoPath   string
+	Name            string
+	BusinessAddress BusinessAddress
+	Email           string
+	Phone           string
+	Website         string
+	VATNumber       string
+	CompanyReg      string
+	LogoPath        string
 }
 
 // Customer
 type CustomerInfo struct {
-	Name    string
-	Email   string
+	Name            string
+	Email           string
 	CustomerAddress CustomerAddress `json:"address"`
 }
 
@@ -29,7 +29,6 @@ type BusinessAddress struct {
 	Postcode string `json:"postcode"`
 	Country  string `json:"country"`
 }
-
 
 // Customer
 type CustomerAddress struct {
@@ -56,6 +55,11 @@ type InvoiceTotals struct {
 	TotalAmount float64
 }
 
+type TaxInfo struct {
+	Enabled bool    `json:"enabled"`
+	Rate    float64 `json:"rate"` // e.g. 20.0
+}
+
 // Payment
 type PaymentInfo struct {
 	BankName      string
@@ -80,6 +84,7 @@ type InvoiceData struct {
 	Customer CustomerInfo
 
 	Items   []InvoiceItem
+	TaxInfo TaxInfo `json:"tax"`
 	Totals  InvoiceTotals
 	Payment PaymentInfo
 

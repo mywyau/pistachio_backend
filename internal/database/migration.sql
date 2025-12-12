@@ -46,6 +46,9 @@ CREATE TABLE invoices (
     customer_email TEXT,
     customer_address TEXT,
     items JSONB NOT NULL,              -- array of line items
+    subtotal   NUMERIC NOT NULL
+    tax_rate   NUMERIC
+    tax_amount NUMERIC
     total NUMERIC NOT NULL,            -- total invoice amount
     pdf_url TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
