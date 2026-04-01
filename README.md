@@ -20,6 +20,7 @@ psql -h localhost -p 5432 -U pistachio -d pistachio_db
 goose postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db" up
 ```
 
+goose -dir migrations postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db?sslmode=disable" up
 
 goose -dir internal/database postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db?sslmode=disable" up
 
