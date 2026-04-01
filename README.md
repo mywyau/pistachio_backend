@@ -1,5 +1,7 @@
 # pistachio_backend
 
+This app needs a db running
+
 ### Get dependencies
 
 e.g. For uuid
@@ -20,8 +22,11 @@ psql -h localhost -p 5432 -U pistachio -d pistachio_db
 goose postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db" up
 ```
 
+### Run goose sql migrations
 goose -dir migrations postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db?sslmode=disable" up
 
+
+### Run goose sql migrations in database directory - this one most likely
 goose -dir internal/database postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db?sslmode=disable" up
 
 ### Run db docker
