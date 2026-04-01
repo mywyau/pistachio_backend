@@ -2,46 +2,73 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+
 	"pistachio/internal/database"
 	"pistachio/internal/jobs"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	dbUrl := "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db"
+	// --- Config
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // local default
+	}
 
-	db := database.ConnectDatabase(dbUrl)
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db"
+	}
+
+	// --- Database
+	db := database.ConnectDatabase(dbURL)
 	defer db.Close()
 
+	// --- Router
 	r := chi.NewRouter()
 
-	// Health check
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	// --- CORS (prod + local)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:3000",
+			"https://your-frontend-domain.vercel.app", // add later
+		},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge: 300,
+	}))
+
+	// --- Routes
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "ok")
 	})
 
 	r.Post("/jobs", jobs.CreateJobHandler(db))
-
 	r.Get("/jobs", jobs.ListJobsHandler(db))
-
 	r.Get("/jobs/{id}", jobs.GetJobDetailHandler(db))
-
 	r.Post("/jobs/{id}/notes", jobs.CreateNoteHandler(db))
-
-	// r.Post("/jobs/{id}/invoice", jobs.CreateInvoiceHandler(db))
-
-	r.Post("/invoices", jobs.CreateInvoiceHandler_v3(db))
-
+	r.Post("/invoices", jobs.CreateInvoiceHandler(db))
 	r.Put("/jobs/{id}/status", jobs.UpdateJobStatusHandler(db))
 
-	// Serve static uploaded files (for local dev)
-	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
-
-	// Upload endpoint
+	// Local file serving (V1 only)
+	r.Handle("/uploads/*",
+		http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))),
+	)
 	r.Post("/jobs/{id}/photos", jobs.UploadPhotoHandler(db, "uploads/photos"))
 
-	fmt.Println("API running on :8080")
-	http.ListenAndServe(":8080", r)
+	// --- Server
+	log.Printf("🚀 API running on port %s", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }

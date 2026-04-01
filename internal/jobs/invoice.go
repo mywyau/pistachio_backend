@@ -22,7 +22,7 @@ type CreateInvoiceRequest struct {
 	Items           []models.InvoiceItem   `json:"items"`
 }
 
-func CreateInvoiceHandler_v3(db *pgxpool.Pool) http.HandlerFunc {
+func CreateInvoiceHandler(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var req CreateInvoiceRequest

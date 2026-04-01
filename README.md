@@ -20,6 +20,21 @@ psql -h localhost -p 5432 -U pistachio -d pistachio_db
 goose postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db" up
 ```
 
+
+goose -dir internal/database postgres "postgres://pistachio:pistachio_pwd@localhost:5432/pistachio_db?sslmode=disable" up
+
+### Run db docker
+
+```
+docker run --name pistachio-postgres \
+  -e POSTGRES_USER=pistachio \
+  -e POSTGRES_PASSWORD=yourpassword \
+  -e POSTGRES_DB=pistachio_db \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+
 ### frontend json request body
 
 {

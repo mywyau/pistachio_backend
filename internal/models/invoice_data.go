@@ -56,7 +56,6 @@ type InvoiceTotals struct {
 }
 
 type TaxInfo struct {
-	Enabled bool    `json:"enabled"`
 	Rate    float64 `json:"rate"` // e.g. 20.0
 }
 

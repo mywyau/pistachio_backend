@@ -1,11 +1,4 @@
-DROP TABLE IF EXISTS invoices;
-DROP TABLE IF EXISTS invoice_items;
-DROP TABLE IF EXISTS jobs;
-DROP TABLE IF EXISTS job_notes;
-DROP TABLE IF EXISTS job_photos;
-DROP TABLE IF EXISTS customers;
-
-
+-- +goose Up
 CREATE TABLE customers (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,
@@ -46,9 +39,9 @@ CREATE TABLE invoices (
     customer_email TEXT,
     customer_address TEXT,
     items JSONB NOT NULL,              -- array of line items
-    subtotal   NUMERIC NOT NULL
-    tax_rate   NUMERIC
-    tax_amount NUMERIC
+    subtotal   NUMERIC,
+    tax_rate   NUMERIC,
+    tax_amount NUMERIC,
     total NUMERIC NOT NULL,            -- total invoice amount
     pdf_url TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -62,3 +55,12 @@ CREATE TABLE invoice_items (
     unit_price NUMERIC NOT NULL,
     line_total NUMERIC NOT NULL
 );
+
+-- +goose Down
+
+DROP TABLE IF EXISTS invoice_items;
+DROP TABLE IF EXISTS invoices;
+DROP TABLE IF EXISTS job_notes;
+DROP TABLE IF EXISTS job_photos;
+DROP TABLE IF EXISTS jobs;
+DROP TABLE IF EXISTS customers;
